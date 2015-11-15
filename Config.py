@@ -4,20 +4,23 @@ from matplotlib.patches import Polygon as mPolygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import json
-from shapely.geometry import Polygon, MultiPolygon, Point
+from shapely.geometry import Polygon, MultiPolygon, Point, LineString
+import copy
+import sys
 
 
 class EnvironmentDef:
 
-    def __init__(self, input_file, factor=5):
+    def __init__(self, input_file, factor=1):
         self.plot_obstacles_polygon = []
+        self.obs_list = []
         self.obs_polygon = MultiPolygon()
         self.initial_state, self.goal_state = [], []
         self.resolution = 0
         self.read_env_from_file(input_file)
-        self.boxes = []
+        # self.boxes = []
         self.factor = factor
-        self.convert_to_block()
+        # self.convert_to_block()
         # self.print_boxes()
 
     def read_env_from_file(self, input_file):
@@ -51,45 +54,43 @@ class EnvironmentDef:
                 polygon = mPolygon(np.array(obs['property']['vertices']))
                 temp_polygon_list.append(Polygon(obs['property']['vertices']))
                 self.plot_obstacles_polygon.append(polygon)
+                self.obs_list.append(obs['property']['vertices'])
             else:
                 print("Undefined shape")
                 break
         self.obs_polygon = MultiPolygon(temp_polygon_list)
 
-    def convert_to_block(self):
+    # def convert_to_block(self):
+    #
+    #     self.boxes = [[1 if self.internal_is_point_inside(i_x/self.factor, i_y/self.factor) else 0
+    #                    for i_x in range(0, self.resolution*self.factor)]
+    #              for i_y in range(0, self.resolution*self.factor)]
 
-        self.boxes = [[1 if self.internal_is_point_inside(i_x/self.factor, i_y/self.factor) else 0
-                       for i_x in range(0, self.resolution*self.factor)]
-                 for i_y in range(0, self.resolution*self.factor)]
-        # self.print_boxes()
-        # for polygon in self.obs_polygon:
-        #     print(polygon.bounds)
+    # def print_boxes(self):
+    #     self.boxes.reverse()
+    #     for row in self.boxes:
+    #         for element in row:
+    #             print(element, " ", end="")
+    #         print("\n")
+    #     self.boxes.reverse()
 
-    def print_boxes(self):
-        self.boxes.reverse()
-        for row in self.boxes:
-            for element in row:
-                print(element, " ", end="")
-            print("\n")
-        self.boxes.reverse()
-
-    def internal_is_point_inside(self, x, y):
-        return Point(x, y).within(self.obs_polygon)
-
-    def is_point_inside_box(self, y, x):
+    def is_point_inside(self, xy):
         """
-        :param x:
-        :param y:
-        :return:True if point is inside, and False if outside
+        :param xy: tuple with x coordinate as first element and y coordinate as second element
+        :return: True if the point is inside the obstacles and False if it isn't
         """
-        return False if self.boxes[x*self.factor][y*self.factor] == 0 else True
+        return Point(xy[0], xy[1]).within(self.obs_polygon)
 
-    def draw_env(self, path):
+    def is_line_inside(self, xy_start, xy_end):
+        line = LineString([xy_start, xy_end])
+        return self.obs_polygon.contains(line) or self.obs_polygon.touches(line) or self.obs_polygon.crosses(line)
+
+    def draw_env(self, path, key_xy):
         fig, ax = plt.subplots()
         x_path, y_path = [], []
         for ls in path:
-            x_path.append(ls.position[0])
-            y_path.append(ls.position[1])
+            x_path.append(key_xy(ls)[0])
+            y_path.append(key_xy(ls)[1])
         colors = 100*np.random.rand(len(self.plot_obstacles_polygon))
         p = PatchCollection(self.plot_obstacles_polygon, cmap=matplotlib.cm.jet, alpha=0.4)
         p.set_array(np.array(colors))
@@ -99,6 +100,35 @@ class EnvironmentDef:
                  x_path, y_path, '*')
         plt.axis([0, self.resolution, 0, self.resolution])
         plt.show()
+
+    def get_visible_vertices(self, xy_robot):
+        if self.is_point_inside(xy_robot):
+            print("Invalid robot position")
+            return None
+        # print(self.obs_list)
+        pool = copy.deepcopy(self.obs_list)
+        pool.append([self.goal_state])
+        # print(pool)
+        visible_vertices, line_robot_vertices = [], {}
+
+        def line_slope(xy1, xy2):
+            return (xy2[1] - xy1[1])/(xy2[0] - xy1[0]) if (xy2[0] - xy1[0]) != 0 else sys.maxsize
+
+        for obj in pool:
+            for vertex in obj:
+                crosses, line = self.visibility_line(xy_robot, vertex)
+                if not crosses:
+                    if line_slope(xy_robot, vertex) in line_robot_vertices:
+                        if line.length < line_robot_vertices[line_slope(xy_robot, vertex)].length:
+                            line_robot_vertices[line_slope(xy_robot, vertex)] = line
+                    else:
+                        line_robot_vertices[line_slope(xy_robot, vertex)] = line
+        visible_vertices.extend([x.xy[0][1], x.xy[1][1]] for x in line_robot_vertices.values())
+        return visible_vertices
+
+    def visibility_line(self, xy_start, xy_end):
+        line = LineString([xy_start, xy_end])
+        return self.obs_polygon.crosses(line), line
 
     def __str__(self):
         return "Obstacle list: %s\nInitial State: %s\nGoal State: %s\nResolution: %d\n" \
