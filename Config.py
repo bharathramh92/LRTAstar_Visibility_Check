@@ -80,7 +80,7 @@ class Environment:
         ax.add_collection(p)
         plt.colorbar(p)
         plt.plot([self.initial_state[0]], [self.initial_state[1]], 'bs', self.goal_state[0], self.goal_state[1], 'g^',
-                 x_path, y_path, '*')
+                 x_path, y_path, '')
         plt.axis([0, self.resolution, 0, self.resolution])
         plt.show()
 
@@ -95,7 +95,6 @@ class Environment:
         for obj in pool:
             for vertex in obj:
                 vertex = tuple(vertex)
-                print(type(xy_robot), type(vertex))
                 if vertex == xy_robot:
                     continue
                 crosses, line = self.visibility_line(xy_robot, vertex)
@@ -129,7 +128,7 @@ class Environment:
 
     def visibility_line(self, xy_start, xy_end):
         line = LineString([xy_start, xy_end])
-        return self.obs_polygon.crosses(line) and not self.obs_polygon.contains(line), line
+        return self.obs_polygon.crosses(line) or self.obs_polygon.contains(line), line
 
     def __str__(self):
         return "Obstacle list: %s\nInitial State: %s\nGoal State: %s\nResolution: %d\n" \
