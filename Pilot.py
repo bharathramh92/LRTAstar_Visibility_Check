@@ -1,14 +1,15 @@
 from queue import PriorityQueue
 from Config import Environment
 from State import State
+import math
 
 
 def main():
     env = Environment("Environment1.json")
-    obstacle_list = set()  #Known obstacles for the robot
+    # obstacle_list = set()  #Known obstacles for the robot
     print(env.get_apprx_visible_vertices(env.initial_state))
     traversal_path = []
-    env.draw_env([], lambda x: x.initial_state)
+
 
     # def local_search(present_state):
     goal_state = State(env.goal_state)
@@ -19,17 +20,29 @@ def main():
     def hill_climbing(state):
         pq = PriorityQueue()
         successor_list = state.successor(env.get_apprx_visible_vertices(state.position))
-        print("successor list ", successor_list)
         for successor in successor_list:
+            if successor.position in traversed:
+                successor = traversed[successor.position]
             pq.put(successor)
         next_state = pq.get()
         if next_state.is_goal():
-            return
+            return next_state
+        if next_state.position in traversed:
+            next_state.h += math.sqrt((state.position[0] - next_state.position[0])**2 +
+                                      (state.position[1] - next_state.position[1]) ** 2)
         traversed[next_state.position] = next_state
-        print("next state ", next_state)
-        hill_climbing(next_state)
-    hill_climbing(initial_state)
-    print(traversed)
+        traversal_path.append(next_state)
+
+        # print("next state ", next_state)
+        return hill_climbing(next_state)
+    traversal_path.append(initial_state)
+    goal = hill_climbing(initial_state)
+    if goal is not None:
+        traversal_path.append(goal)
+        print("Goal found, total stops are %d" % (len(traversal_path)))
+
+    print(traversal_path)
+    env.draw_env(traversal_path, lambda x: x.position)
     # local_search(env.initial_state)
 
     # def a_star(present_state):
