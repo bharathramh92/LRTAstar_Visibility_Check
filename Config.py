@@ -9,7 +9,7 @@ import copy
 import sys
 
 
-class EnvironmentDef:
+class Environment:
 
     def __init__(self, input_file, factor=1):
         self.plot_obstacles_polygon = []
@@ -18,10 +18,7 @@ class EnvironmentDef:
         self.initial_state, self.goal_state = [], []
         self.resolution = 0
         self.read_env_from_file(input_file)
-        # self.boxes = []
         self.factor = factor
-        # self.convert_to_block()
-        # self.print_boxes()
 
     def read_env_from_file(self, input_file):
         try:
@@ -60,20 +57,6 @@ class EnvironmentDef:
                 break
         self.obs_polygon = MultiPolygon(temp_polygon_list)
 
-    # def convert_to_block(self):
-    #
-    #     self.boxes = [[1 if self.internal_is_point_inside(i_x/self.factor, i_y/self.factor) else 0
-    #                    for i_x in range(0, self.resolution*self.factor)]
-    #              for i_y in range(0, self.resolution*self.factor)]
-
-    # def print_boxes(self):
-    #     self.boxes.reverse()
-    #     for row in self.boxes:
-    #         for element in row:
-    #             print(element, " ", end="")
-    #         print("\n")
-    #     self.boxes.reverse()
-
     def is_point_inside(self, xy):
         """
         :param xy: tuple with x coordinate as first element and y coordinate as second element
@@ -101,14 +84,32 @@ class EnvironmentDef:
         plt.axis([0, self.resolution, 0, self.resolution])
         plt.show()
 
-    def get_visible_vertices(self, xy_robot):
+    def get_apprx_visible_vertices(self, xy_robot):
         if self.is_point_inside(xy_robot):
             print("Invalid robot position")
             return None
-        # print(self.obs_list)
         pool = copy.deepcopy(self.obs_list)
         pool.append([self.goal_state])
-        # print(pool)
+        visible_vertices, visible_lines = [], []
+
+        for obj in pool:
+            for vertex in obj:
+                vertex = tuple(vertex)
+                print(type(xy_robot), type(vertex))
+                if vertex == xy_robot:
+                    continue
+                crosses, line = self.visibility_line(xy_robot, vertex)
+                if not crosses:
+                    visible_lines.append(line)
+        visible_vertices.extend([x.xy[0][1], x.xy[1][1]] for x in visible_lines)
+        return visible_vertices
+
+    def get_actual_visible_vertices(self, xy_robot):
+        if self.is_point_inside(xy_robot):
+            print("Invalid robot position")
+            return None
+        pool = copy.deepcopy(self.obs_list)
+        pool.append([self.goal_state])
         visible_vertices, line_robot_vertices = [], {}
 
         def line_slope(xy1, xy2):
@@ -128,7 +129,7 @@ class EnvironmentDef:
 
     def visibility_line(self, xy_start, xy_end):
         line = LineString([xy_start, xy_end])
-        return self.obs_polygon.crosses(line), line
+        return self.obs_polygon.crosses(line) and not self.obs_polygon.contains(line), line
 
     def __str__(self):
         return "Obstacle list: %s\nInitial State: %s\nGoal State: %s\nResolution: %d\n" \
