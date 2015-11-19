@@ -1,22 +1,36 @@
 from queue import PriorityQueue
-from Config import EnvironmentDef
+from Config import Environment
 from State import State
 
 
 def main():
-    env = EnvironmentDef("Environment1.json")
-    # env.print_boxes()
-    # env.draw_env()
-    # print(env)
+    env = Environment("Environment1.json")
     obstacle_list = set()  #Known obstacles for the robot
-    print(env.get_visible_vertices(env.initial_state))
+    print(env.get_apprx_visible_vertices(env.initial_state))
     traversal_path = []
     env.draw_env([], lambda x: x.initial_state)
 
-    def local_search(present_state):
-        goal_state = State(env.goal_state, env.resolution, obstacle_list)
-        initial_state = State(present_state, env.resolution, obstacle_list, GOAL_STATE=goal_state)
+    # def local_search(present_state):
+    goal_state = State(env.goal_state)
+    initial_state = State(env.initial_state, GOAL_STATE=goal_state)
+    traversed = {}
+    # print(initial_state.successor(env.get_apprx_visible_vertices(initial_state.position)))
 
+    def hill_climbing(state):
+        pq = PriorityQueue()
+        successor_list = state.successor(env.get_apprx_visible_vertices(state.position))
+        print("successor list ", successor_list)
+        for successor in successor_list:
+            pq.put(successor)
+        next_state = pq.get()
+        if next_state.is_goal():
+            return
+        traversed[next_state.position] = next_state
+        print("next state ", next_state)
+        hill_climbing(next_state)
+    hill_climbing(initial_state)
+    print(traversed)
+    # local_search(env.initial_state)
 
     # def a_star(present_state):
     #     open_set_pq, open_set, closed_set = PriorityQueue(), {}, {}
