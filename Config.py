@@ -3,6 +3,10 @@ import matplotlib
 from matplotlib.patches import Polygon as mPolygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+
+from matplotlib.axes import Axes
+
 import json
 from shapely.geometry import Polygon, MultiPolygon, Point, LineString
 from shapely.wkt import loads
@@ -20,6 +24,7 @@ class Environment:
         self.resolution = 0
         self.read_env_from_file(input_file)
         self.factor = factor
+
 
     def read_env_from_file(self, input_file):
         try:
@@ -70,21 +75,40 @@ class Environment:
         line = LineString([xy_start, xy_end])
         return self.obs_polygon.contains(line) or self.obs_polygon.touches(line) or self.obs_polygon.crosses(line)
 
-    def draw_env(self, path, key_xy):
+    def draw_env(self, path, key_xy,k_value ):
         fig, ax = plt.subplots()
+        # fig, ax = plt.axes()
         x_path, y_path = [], []
+
         for ls in path:
             x_path.append(key_xy(ls)[0])
             y_path.append(key_xy(ls)[1])
+
+
         colors = 100*np.random.rand(len(self.plot_obstacles_polygon))
         p = PatchCollection(self.plot_obstacles_polygon, cmap=matplotlib.cm.jet, alpha=0.4)
         p.set_array(np.array(colors))
         ax.add_collection(p)
         plt.colorbar(p)
-        plt.plot([self.initial_state[0]], [self.initial_state[1]], 'bs', self.goal_state[0], self.goal_state[1], 'g^',
-                 x_path, y_path, '')
+        print("x_path is " + str(x_path[0])+" "+str(x_path[1]))
+        print("y_path is " + str(y_path))
+
+        plt.plot([self.initial_state[0]], [self.initial_state[1]], 'bs', self.goal_state[0], self.goal_state[1], 'g^')
+            # ,
+                 # x_path, y_path, '')
         plt.axis([0, self.resolution, 0, self.resolution])
-        plt.show()
+
+        # plt.plot(X_point,y_point)
+        plt.arrow(x_path[0], y_path[0], x_path[1]-x_path[0], y_path[1]-y_path[0], fc="k", ec="k", head_width=1.55, head_length=1.1)
+
+
+        plt.title("figure"+ str(k_value)+".jpeg")
+
+        fig.savefig("figure"+ str(k_value),format = 'jpeg',dpi=fig.dpi)
+
+        k_value+=1
+
+    
 
     def get_apprx_visible_vertices(self, xy_robot):
         if self.is_point_inside(xy_robot):
