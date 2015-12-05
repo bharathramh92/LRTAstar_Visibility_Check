@@ -5,6 +5,7 @@ from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import json
 from shapely.geometry import Polygon, MultiPolygon, Point, LineString
+from shapely.wkt import loads
 import copy
 import sys
 
@@ -22,10 +23,11 @@ class Environment:
 
     def read_env_from_file(self, input_file):
         try:
+            print(input_file)
             with open(input_file, mode='r', encoding='utf-8') as a_file:
                 environment = json.loads(a_file.read())
-        except FileNotFoundError:
-            print("File not found")
+        except FileNotFoundError as fl:
+            print("File not found", fl)
             exit(1)
         except ValueError:
             print("Invalid JSON")
