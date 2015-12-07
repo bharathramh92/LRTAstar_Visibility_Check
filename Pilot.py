@@ -41,7 +41,7 @@ def main():
     if goal is not None:
         traversal_path.append(goal)
         print("Goal found, total stops are %d" % (len(traversal_path)))
-    print("This is traversal")
+
     print(traversal_path)
 
     temp_path=[]
