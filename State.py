@@ -2,7 +2,7 @@ import math
 
 
 class State:
-
+    # This is an object class for state definition.
     def __init__(self, position, GOAL_STATE=None):
         self.position = tuple(position)
         self.GOAL_STATE = GOAL_STATE
@@ -12,7 +12,7 @@ class State:
             self.heuristics()
 
     def heuristics(self):
-        # h is based on manhattan distance from current state to goal state
+        # h is the direct distance between goal point and vertex.
         self.h += math.sqrt((self.position[0]-self.GOAL_STATE.position[0])**2 +
                             (self.position[1]-self.GOAL_STATE.position[1])**2)
 

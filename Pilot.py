@@ -2,18 +2,15 @@ from queue import PriorityQueue
 from Config import Environment
 from State import State
 import math
+import sys
 
 
 def main():
-
-    env = Environment("Environments/Environment10.json")
-    # obstacle_list = set()  #Known obstacles for the robot
-    print(env.get_apprx_visible_vertices(env.initial_state))
+    env = Environment(sys.argv[1])
     traversal_path = []
     goal_state = State(env.goal_state)
     initial_state = State(env.initial_state, GOAL_STATE=goal_state)
     traversed = {}
-    # print(initial_state.successor(env.get_apprx_visible_vertices(initial_state.position)))
 
     def hill_climbing(state):
         pq = PriorityQueue()
@@ -30,8 +27,6 @@ def main():
                                       (state.position[1] - next_state.position[1]) ** 2)
         traversed[next_state.position] = next_state
         traversal_path.append(next_state)
-
-        # print("next state ", next_state)
         return hill_climbing(next_state)
     traversal_path.append(initial_state)
     goal = hill_climbing(initial_state)
@@ -40,16 +35,7 @@ def main():
         print("Goal found, total stops are %d" % (len(traversal_path)))
 
     print(traversal_path)
-
-    # temp_path = []
-    # for i in range(0, len(traversal_path)-1):
-    #     temp_path.append(traversal_path[i])
-    #     temp_path.append(traversal_path[i+1])
-    #     env.draw_env(temp_path,lambda x: x.position,i)
-    #     temp_path.clear()
-    # traversal_path
-    env.animate_path(traversal_path,lambda x: x.position)
-    print("Finished saving figure")
+    env.animate_path(traversal_path, lambda x: x.position)
 
 if __name__ == '__main__':
     main()
