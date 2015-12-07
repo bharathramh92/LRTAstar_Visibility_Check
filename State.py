@@ -1,3 +1,6 @@
+import math
+
+
 class State:
 
     def __init__(self, position, GOAL_STATE=None):
@@ -10,8 +13,8 @@ class State:
 
     def heuristics(self):
         # h is based on manhattan distance from current state to goal state
-        self.h += abs(self.position[0]-self.GOAL_STATE.position[0]) + \
-                  abs(self.position[1]-self.GOAL_STATE.position[1])
+        self.h += math.sqrt((self.position[0]-self.GOAL_STATE.position[0])**2 +
+                            (self.position[1]-self.GOAL_STATE.position[1])**2)
 
     def is_goal(self):
         return self.position == self.GOAL_STATE.position
