@@ -1,7 +1,7 @@
 {
     "resolution": 100,
     "initial_state": [5, 20],
-    "goal_state": [58, 12],
+    "goal_state": [50, 28],
     "obstacles": [
         {
             "shape": "polygon",
