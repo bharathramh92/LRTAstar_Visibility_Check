@@ -6,7 +6,7 @@ import math
 
 def main():
 
-    env = Environment("Environments/Environment1.json")
+    env = Environment("Environments/Environment10.json")
     # obstacle_list = set()  #Known obstacles for the robot
     print(env.get_apprx_visible_vertices(env.initial_state))
     traversal_path = []
@@ -38,7 +38,7 @@ def main():
     if goal is not None:
         traversal_path.append(goal)
         print("Goal found, total stops are %d" % (len(traversal_path)))
-    print("This is traversal")
+
     print(traversal_path)
 
     # temp_path = []

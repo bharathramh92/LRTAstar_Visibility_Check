@@ -4,12 +4,8 @@ from matplotlib.patches import Polygon as mPolygon
 from matplotlib.collections import PatchCollection
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-
-from matplotlib.axes import Axes
-
 import json
 from shapely.geometry import Polygon, MultiPolygon, Point, LineString
-from shapely.wkt import loads
 import copy
 import sys
 
@@ -25,14 +21,13 @@ class Environment:
         self.read_env_from_file(input_file)
         self.factor = factor
 
-
     def read_env_from_file(self, input_file):
         try:
             print(input_file)
             with open(input_file, mode='r', encoding='utf-8') as a_file:
                 environment = json.loads(a_file.read())
         except FileNotFoundError as fl:
-            print("File not found", fl)
+            print("File not found for JSON ", fl)
             exit(1)
         except ValueError:
             print("Invalid JSON")
@@ -100,9 +95,9 @@ class Environment:
         plt.arrow(x_path[0], y_path[0], x_path[1]-x_path[0], y_path[1]-y_path[0], fc="k", ec="k", head_width=1.55, head_length=1.1)
 
 
-        plt.title("figure"+ str(k_value)+".jpeg")
+        plt.title("figure"+ str(k_value)+".png")
 
-        fig.savefig("figure"+ str(k_value),format = 'jpeg',dpi=fig.dpi)
+        fig.savefig("figure"+ str(k_value)+".png",format = 'png',dpi=fig.dpi)
 
     def animate_path(self, path, key_xy):
         fig, ax = plt.subplots()
