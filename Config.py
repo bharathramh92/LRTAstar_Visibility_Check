@@ -15,13 +15,13 @@ class Environment:
     def __init__(self, input_file, factor=1):
         self.plot_obstacles_polygon = []
         self.obs_list = []
-        self.obs_polygon = MultiPolygon()
+        self.obs_polygon = MultiPolygon()       # Shapely object to store all polygons
         self.initial_state, self.goal_state = [], []
-        self.resolution = 0
+        self.resolution = 0                     # Dimension of the plane.
         self.read_env_from_file(input_file)
-        self.factor = factor
 
     def read_env_from_file(self, input_file):
+        # Read json input
         try:
             print(input_file)
             with open(input_file, mode='r', encoding='utf-8') as a_file:
@@ -36,6 +36,7 @@ class Environment:
             print("Unable to process input file")
             exit(1)
         try:
+            # Making sure the required entities are defined in the input json file.
             environment['resolution'] and environment['obstacles']
             environment['initial_state'] and environment['goal_state']
         except KeyError:
@@ -67,10 +68,14 @@ class Environment:
         return Point(xy[0], xy[1]).within(self.obs_polygon)
 
     def is_line_inside(self, xy_start, xy_end):
+        # xy_start is tuple of (x, y) coordinate of one end of the line.
+        # xy_end is tuple of (x, y) coordinate of the other end of line.
         line = LineString([xy_start, xy_end])
         return self.obs_polygon.contains(line) or self.obs_polygon.touches(line) or self.obs_polygon.crosses(line)
 
-    def draw_env(self, path, key_xy,k_value ):
+    def draw_env(self, path, key_xy, k_value):
+        # Method to draw an arrow in the environment
+        # path is a list of state objects. index 0 maps from-state and index 1 maps to-state.
         fig, ax = plt.subplots()
         x_path, y_path = [], []
 
@@ -83,21 +88,12 @@ class Environment:
         p.set_array(np.array(colors))
         ax.add_collection(p)
         plt.colorbar(p)
-        # print("x_path is " + str(x_path[0])+" "+str(x_path[1]))
-        # print("y_path is " + str(y_path))
-
         plt.plot([self.initial_state[0]], [self.initial_state[1]], 'bs', self.goal_state[0], self.goal_state[1], 'g^')
-            # ,
-                 # x_path, y_path, '')
         plt.axis([0, self.resolution, 0, self.resolution])
-
-        # plt.plot(X_point,y_point)
         plt.arrow(x_path[0], y_path[0], x_path[1]-x_path[0], y_path[1]-y_path[0], fc="k", ec="k", head_width=1.55, head_length=1.1)
+        plt.title("figure" + str(k_value)+".png")
 
-
-        plt.title("figure"+ str(k_value)+".png")
-
-        fig.savefig("figure"+ str(k_value)+".png",format = 'png',dpi=fig.dpi)
+        fig.savefig("figure" + str(k_value)+".png", format='png', dpi=fig.dpi)
 
     def animate_path(self, path, key_xy):
         fig, ax = plt.subplots()
@@ -111,48 +107,25 @@ class Environment:
         plt.plot([self.initial_state[0]], [self.initial_state[1]], 'bs', self.goal_state[0], self.goal_state[1], 'g^')
         plt.axis([0, self.resolution, 0, self.resolution])
 
-        x_0, y_0 = path[0].position[0], path[0].position[1]
-        x_1, y_1 = path[0 + 1].position[0], path[0 + 1].position[1]
-        print((x_0, x_1), (y_0, y_1))
-        # line, = ax.plot((x_0, x_1), (y_0, y_1))
+        x_0, y_0 = key_xy(path[0])[0], key_xy(path[0])[1]
+        x_1, y_1 = key_xy(path[0 + 1])[0], key_xy(path[0 + 1])[1]
         dx, dy = x_1 - x_0, y_0 - y_1
         qv = ax.quiver(x_0, y_0, dx, dy, angles='xy',scale_units='xy',scale=1)
-        # arrow = ax.arrow(x_0, y_0, dx, dy, fc="k", ec="k", head_width=1.55, head_length=1.1)
+
         def animate(i):
-            x_init, y_init = path[i].position[0], path[i].position[1]
-            x_f, y_f = path[i + 1].position[0], path[i + 1].position[1]
+            x_init, y_init =key_xy(path[i])[0], key_xy(path[i])[1]
+            x_f, y_f = key_xy(path[i + 1])[0], key_xy(path[i + 1])[1]
             dx, dy = x_f - x_init, y_f - y_init
-            # line.set_ydata((y_init, y_f))
-            # line.set_xdata((x_init, x_f))
-            # ax.arrow.remove(qv)
-            # qv.set_offsets(qv.get_offsets() * (dx, dy))
-            # qv.remove()
             qv.set_UVC(np.array(dx), np.array(dy))
-            # print(qv.C)
-            # print(qv.U, " ", qv.V, " ", type(qv.U))
-            # print(np.array(dx))
-            # qv.U = np.array(dx)
-            # qv.V = np.array(y_f)
             qv.set_offsets((x_init, y_init))
-            # print(qv.X, qv.Y, qv.U, qv.V)
-            # qv.X = x_init
-            # qv.
-            # qv = ax.quiver(x_init, y_init, dx, dy, angles='xy',scale_units='xy',scale=1)
             return qv
 
         anim = animation.FuncAnimation(fig, animate, frames=range(0, len(path)-1), interval=500)
-        # movieWriter = matplotlib.animation.MovieWriter(fps=5, codec=None, bitrate=None, extra_args=None, metadata=None)
-        # mywriter = animation.FFMpegWriter()
-        # anim.save('mymovie.mp4', writer=mywriter)
-
-        # FFMpegWriter = animation.writers['avconv']
-        # metadata = dict(title='Movie Test', artist='Matplotlib',
-        #                 comment='Movie support!')
-        # writer = FFMpegWriter(fps=15, metadata=metadata)
-        # anim.save('demoanimation.gif', writer='avconf', fps=4, dpi=1)
         plt.show()
 
     def get_apprx_visible_vertices(self, xy_robot):
+        # To get visible vertices from robot point
+        # xy_robot should be a tuple of (x, y) coordinate
         if self.is_point_inside(xy_robot):
             print("Invalid robot position")
             return None
@@ -195,6 +168,7 @@ class Environment:
         return visible_vertices
 
     def visibility_line(self, xy_start, xy_end):
+        # Helper Method to check if the line is intersected by any obstacles.
         line = LineString([xy_start, xy_end])
         return self.obs_polygon.crosses(line) or self.obs_polygon.contains(line), line
 
